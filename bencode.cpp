@@ -124,7 +124,7 @@ std::unique_ptr<BItem> Bencode::decode(std::string& buf)
                 return this->parse_dict(buf);
             }
         default:
-            if (0 <= buf[0] <= '9')
+            if ('0' <= buf[0] && buf[0] <= '9')
                 return this->parse_string(buf);
             throw FormatError("Unknown type!");
     }
