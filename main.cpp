@@ -4,18 +4,8 @@
 #include <sstream>
 
 #include "bencode.h"
+#include "tracker.h"
 
-std::string read_file(const std::string& path)
-{
-    std::ifstream fh;
-    std::stringstream buf;
-    
-    fh.open(path);
-    buf << fh.rdbuf();
-    fh.close();
-
-    return buf.str();
-}
 
 int main(int argc, char** argv)
 {
@@ -24,9 +14,19 @@ int main(int argc, char** argv)
         std::cerr << "Usage: " << argv[0] << " <torrent>" << std::endl;
         return 1;
     }
-    auto bencode = Bencode();
-    auto buf = read_file(argv[1]);
-    std::cout << bencode.to_string(bencode.decode(buf).get()) << std::endl;
 
+    std::cout << "[*] Decoding torrent file..." << std::endl;
+    TorrentFile torrent_file(argv[1]);
+    PeerId peer_id;
+
+    for (auto tracker_url : torrent_file.getTrackers())
+    {
+        std::cout << "[*] Connecting to tracker! " << tracker_url << std::endl;
+        Tracker tracker = Tracker(tracker_url, torrent_file.getInfoHash(), peer_id);
+        for (auto const& item : tracker.peers(0, 0, 0))
+        {
+            std::cout << "[*] Found peer! " << item.ip << std::endl;
+        }
+    }
     return 0;
-}
+}   
