@@ -32,7 +32,17 @@ size_t BDict::size()
     return total;
 }
 
-std::unique_ptr<BInt> Bencode::parse_int(std::string& buf)
+BItem* BDict::find(std::string key)
+{
+    for (const auto& item : this->raw())
+    {
+        if (item.first->raw() == key)
+            return item.second.get();
+    }
+    return nullptr;
+}
+
+std::unique_ptr<BInt> Bencode::decodeInt(std::string& buf)
 {
     try
     {
@@ -44,7 +54,7 @@ std::unique_ptr<BInt> Bencode::parse_int(std::string& buf)
     }
 }
 
-std::unique_ptr<BString> Bencode::parse_string(std::string& buf)
+std::unique_ptr<BString> Bencode::decodeStr(std::string& buf)
 {
     size_t len, colon_pos;
     try
@@ -66,7 +76,7 @@ std::unique_ptr<BString> Bencode::parse_string(std::string& buf)
     return std::make_unique<BString>(data);
 }
 
-std::unique_ptr<BList> Bencode::parse_list(std::string& buf)
+std::unique_ptr<BList> Bencode::decodeList(std::string& buf)
 {
     std::unique_ptr<BList> blist = std::make_unique<BList>();
     std::unique_ptr<BItem> bitem = NULL;
@@ -83,7 +93,7 @@ std::unique_ptr<BList> Bencode::parse_list(std::string& buf)
     return blist;
 }
 
-std::unique_ptr<BDict> Bencode::parse_dict(std::string& buf)
+std::unique_ptr<BDict> Bencode::decodeDict(std::string& buf)
 {
     std::unique_ptr<BDict> bdict = std::make_unique<BDict>();
     std::unique_ptr<BString> key = NULL;
@@ -95,7 +105,7 @@ std::unique_ptr<BDict> Bencode::parse_dict(std::string& buf)
     {
         // decode key
         temp = buf.substr(pos);
-        key = this->parse_string(temp);
+        key = this->decodeStr(temp);
         pos += key->size();
 
         // decode value
@@ -104,7 +114,7 @@ std::unique_ptr<BDict> Bencode::parse_dict(std::string& buf)
         pos += val->size();
 
         // insert
-        bdict->raw().insert(std::make_pair(std::move(key), std::move(val)));
+        bdict->raw().emplace_back(std::make_pair(std::move(key), std::move(val)));
     }
     return bdict;
 }
@@ -114,18 +124,18 @@ std::unique_ptr<BItem> Bencode::decode(std::string& buf)
     switch (buf[0])
     {
         case 'i':
-            return this->parse_int(buf);
+            return this->decodeInt(buf);
             
         case 'l':
-            return this->parse_list(buf);
+            return this->decodeList(buf);
         
         case 'd':
             {
-                return this->parse_dict(buf);
+                return this->decodeDict(buf);
             }
         default:
             if ('0' <= buf[0] && buf[0] <= '9')
-                return this->parse_string(buf);
+                return this->decodeStr(buf);
             throw FormatError("Unknown type!");
     }
 }
@@ -171,4 +181,58 @@ std::string Bencode::to_string(BItem* bitem)
         out += "}";
     }
     return out;
+}
+
+std::string Bencode::encodeInt(BInt* i)
+{
+    return "i" + std::to_string(i->raw()) + "e";
+}
+
+std::string Bencode::encodeStr(BString* s)
+{
+    return std::to_string(s->raw().length()) + ":" + s->raw();
+}
+
+std::string Bencode::encodeList(BList* l)
+{
+    std::string out = "l";
+    for (const auto& item : l->raw())
+    {
+        out += this->encode(item.get());
+    }
+    out += "e";
+    return out;
+}
+
+std::string Bencode::encodeDict(BDict* d)
+{
+    std::string out = "d";
+    for (const auto& item : d->raw())
+    {
+        out += this->encode(item.first.get()) + this->encode(item.second.get());
+    }
+    out += "e";
+    return out;
+}
+
+std::string Bencode::encode(BItem* item)
+{
+    std::string out;
+    auto bint = dynamic_cast<BInt*>(item);
+    if (bint)
+        return this->encodeInt(bint);
+
+    auto bstring = dynamic_cast<BString*>(item);
+    if (bstring)
+        return this->encodeStr(bstring);
+
+    auto blist = dynamic_cast<BList*>(item);
+    if (blist)
+        return this->encodeList(blist);
+
+    auto bdict = dynamic_cast<BDict*>(item);
+    if (bdict)
+        return this->encodeDict(bdict);
+
+    throw FormatError("unknown BItem type!");
 }

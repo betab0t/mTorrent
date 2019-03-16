@@ -35,17 +35,16 @@ TorrentFile::TorrentFile(std::string path)
 std::vector<std::string> TorrentFile::getTrackers()
 {
     std::vector<std::string> trackers;
-    BList *announceList = NULL;
-    for (auto const& item : this->torrent->raw())
-    {
-        if (item.first->raw() == "announce-list")
-        {
-            announceList = dynamic_cast<BList*>(item.second.get());
-            if (announceList == nullptr)
-                throw FormatError("invalid announce list!");
-            break;
-        }
-    }
+    BList* announceList = NULL;
+    BItem* tmp = this->torrent->find("announce-list");
+    if (tmp == nullptr)
+        throw FormatError("no announce list found!");
+
+    announceList = dynamic_cast<BList*>(tmp);
+    if (announceList == nullptr)
+        throw FormatError("invalid announce list!");
+
+
     if (!announceList)
         throw FormatError("no announce list found!");
     

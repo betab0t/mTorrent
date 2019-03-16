@@ -19,7 +19,7 @@ class TorrentFile
 private:
     std::unique_ptr<BDict> torrent;
     InfoHash info_hash;
-
+    
 public:
     TorrentFile(std::string path);
     std::vector<std::string> getTrackers();

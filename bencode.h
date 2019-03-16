@@ -2,7 +2,6 @@
 
 #include <memory>
 #include <vector>
-#include <map>
 #include <cmath>
 
 #define count_digits(x) (floor(log10((x))) + 1)
@@ -45,23 +44,31 @@ public:
 class BDict : public BItem
 {
 private:
-    std::map<std::unique_ptr<BString>, std::unique_ptr<BItem>> dict;
+    // use a vector(not map/unorderd_map) to save the original insertion order
+    std::vector<std::pair<std::unique_ptr<BString>, std::unique_ptr<BItem>>> dict;
 
 public:
-    std::map<std::unique_ptr<BString>, std::unique_ptr<BItem>>& raw() { return this->dict; };
+    std::vector<std::pair<std::unique_ptr<BString>, std::unique_ptr<BItem>>>& raw() { return this->dict; };
     size_t size() override;
+    BItem* find(std::string key);
 };
 
 class Bencode
 {
 private:
-    std::unique_ptr<BInt> parse_int(std::string& buf);
-    std::unique_ptr<BString> parse_string(std::string& buf);
-    std::unique_ptr<BList> parse_list(std::string& buf);
-    std::unique_ptr<BDict> parse_dict(std::string& buf);
+    std::unique_ptr<BInt> decodeInt(std::string& buf);
+    std::unique_ptr<BString> decodeStr(std::string& buf);
+    std::unique_ptr<BList> decodeList(std::string& buf);
+    std::unique_ptr<BDict> decodeDict(std::string& buf);
     
+    std::string encodeInt(BInt* i);
+    std::string encodeStr(BString* s);
+    std::string encodeList(BList* l);
+    std::string encodeDict(BDict* d);
+
 public:
     std::unique_ptr<BItem> decode(std::string& buf);
+    std::string encode(BItem* item);
     std::string to_string(BItem* bitem);
 };
 
