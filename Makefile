@@ -1,10 +1,11 @@
 PROG = mTorrent
 CC = g++
 CPPFLAGS = -g -Wall --std=c++14
+LIBS = -lssl -lcrypto
 OBJS = main.o bencode.o tracker.o utils.o
 
 $(PROG) : $(OBJS)
-	$(CC) $(LDFLAGS) -o $(PROG) $(OBJS)
+	$(CC) $(LDFLAGS) -o $(PROG) $(OBJS) $(LIBS)
 
 main.o : bencode.h
 	$(CC) $(CPPFLAGS) -c main.cpp

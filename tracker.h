@@ -7,23 +7,17 @@
 
 // ================================
 
-struct InfoHash {
-    std::array<char, 20> sha1;
-    std::string infohash;
-};
-
-typedef std::array<char, 20> PeerId;
+typedef std::array<unsigned char, 20> PeerId, InfoHash;
 
 class TorrentFile
 {
 private:
     std::unique_ptr<BDict> torrent;
-    InfoHash info_hash;
     
 public:
     TorrentFile(std::string path);
     std::vector<std::string> getTrackers();
-    InfoHash& getInfoHash() { return info_hash; };
+    InfoHash getInfoHash();
 };
 
 // ================================

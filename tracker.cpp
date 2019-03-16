@@ -2,6 +2,7 @@
 #include <vector>
 #include <fstream>
 #include <sstream>
+#include <openssl/sha.h>
 
 #include "tracker.h"
 #include "bencode.h"
@@ -68,3 +69,17 @@ std::vector<PeerInfo> Tracker::peers(size_t up, size_t down, size_t left)
     std::vector<PeerInfo> res;
     return res;
 };
+
+InfoHash TorrentFile::getInfoHash()
+{
+    BItem* info;
+    InfoHash info_hash;
+    if ((info = this->torrent->find("info")) == nullptr)
+        throw FormatError("no info key found!");
+    
+    Bencode bencode = Bencode();
+    std::string raw_data = bencode.encode(info);
+    SHA1((const unsigned char*)raw_data.c_str(), raw_data.length(), (unsigned char*)&info_hash);
+
+    return info_hash;
+}
