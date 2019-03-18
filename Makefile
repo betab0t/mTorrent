@@ -1,7 +1,7 @@
 PROG = mTorrent
 CC = g++
 CPPFLAGS = -g -Wall --std=c++14
-LIBS = -lssl -lcrypto
+LIBS = -lssl -lcrypto -lcurl -lnsl
 OBJS = main.o bencode.o tracker.o utils.o
 
 $(PROG) : $(OBJS)
